@@ -12,3 +12,7 @@ cp -R rive-rigging-components/rive-rigging-components ~/.claude/skills/
 ```
 
 Start a new Claude Code session afterwards so the skill is picked up.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
