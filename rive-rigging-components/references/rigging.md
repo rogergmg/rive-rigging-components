@@ -2,7 +2,7 @@
 
 Tags: **[mirror]** means the version number comes from the Releasebot aggregator and has not been checked against Rive's original post. **[unofficial]** marks a secondary-source heuristic. **[no fix found]** and **[unclear]** are explained in SKILL.md.
 
-Contents: R1 Binding setup · R2 Weights · R3 IK and constraints · R4 Rigs inside components · R5 Joysticks and blend states · R6 Editor vs runtime rendering · R7 Performance · R8 Solos and draw order · R9 Gradients · R10 Migration · Rigging checklist
+Contents: R1 Binding setup · R2 Weights · R3 IK and constraints · R4 Rigs inside components · R5 Joysticks and blend states · R6 Editor vs runtime rendering · R7 Performance · R8 Solos and draw order · R9 Gradients · R10 Migration · R11 Moving parts cut from one flat image · Rigging checklist
 
 ---
 
@@ -225,6 +225,35 @@ Parametric shapes such as rectangles and ellipses must first be converted to a c
 
 **Note:** the Rive vs Spine page is written by Rive. Use it for stated facts (no importer, no physics constraint), not for judgments about which tool is better.
 
+## R11. Moving a part cut from one flat image (ears, tails, hair tufts)
+
+**Symptoms**
+- A part cut out of a single flattened raster (an ear, a tail, a tuft) looks wrong when it turns: a gap or dark wedge opens at the joint, a sliver of the body moves with the part, nearby markings (stripes, spots) shear, or a spike or notch appears at the outline.
+- Each fix to one end of the joint breaks the other end.
+
+**Who:** designers and developers animating flat character art, in Rive or in plain web layers (CSS/SVG/canvas). The geometry is the same in both.
+
+**Cause:** the part joins the body along a long root line, not at a point. A rigid rotation about any pivot moves every point on that root except the pivot, so one end of the joint lifts off and the other digs in. The wider the root and the bigger the angle, the bigger the gap (displacement ≈ distance from pivot × angle in radians; 50 px at 8° is about 7 px). Cutting the part out also leaves either a hole or leftover part pixels on the body layer.
+
+**What does not work** (each was tried and failed on real art):
+- Rigid parenting of the cut-out to a bone, or a CSS `rotate()` on the cut-out layer, with the root cut through the body.
+- Putting the part *behind* the body and painting a closed body outline over the hole. The painted outline never matches the art exactly. Leftover root pixels stay on the body layer and stop moving, so they show up as notches. Changing the root cut moves the artefact somewhere else.
+- Chasing each artefact with another mask tweak. If two rounds of tweaks haven't converged, the method is wrong; change the method.
+
+**Fix: keep the root fixed and bend the part from it**
+1. Draw a straight base line across the part's root. It must separate the part (above the line) from everything that must stay still (below the line). Check it against the pixels, not by eye: no body marking may sit above the line, and as much of the part as possible should sit above it. Map the region as a coarse pixel grid if needed.
+2. Split the art at that line. The body layer keeps everything below it; nothing needs repainting. The part layer takes everything above it, plus a soft 3–4 px overlap below the line. A hard 1 px overlap leaves a visible hairline in browsers.
+3. Keep the part layer **on top of** the body.
+4. Animate a **shear along the base line**, not a rotation. Points on the line stay exactly where they are, and the tip swings sideways in proportion to its distance from the line.
+   - **Web:** put `transform-origin` on the line and use `transform: rotate(A) skewX(s) rotate(-A)`, where A is the line's angle. Keep the same three functions in every keyframe so the browser interpolates `s` alone; a `matrix()` keyframe gets decomposed and stops being a pure shear.
+   - **Rive:** use a mesh on the image instead of a cut-out. Bind the root-line vertices 100% to the body or head bone and the tip vertices to the part's bone, and add a ring of blended vertices in between (R1, R2). This is the Rive equivalent of the shear: the root is pinned, the tip follows the bone.
+5. Keep angles small (about 8° or less) for broad parts, and check the sign of `s` for each side separately: an outward flick has opposite signs on mirrored parts.
+
+**Verification, before saying it's fixed**
+- Look at the place the user sees it: the deployed page or the real runtime, not a mock-up or a separate test render.
+- Freeze the **real** animation at its extreme keyframe (in CSS, a negative `animation-delay` with `animation-play-state: paused`), zoom 3× or more, on both a light and a dark background, and inspect every joint. Also check the opposite extreme (the inward perk) and a stress angle a bit past the widest keyframe.
+- Compare against the version that is live now. If the new one isn't clearly better at the same zoom, it isn't fixed.
+
 ---
 
 ## Rigging checklist
@@ -238,3 +267,4 @@ Parametric shapes such as rectangles and ellipses must first be converted to a c
 7. Give each joystick axis its own set of properties. For app-driven poses, consider view model numbers feeding a blend state.
 8. Test deformation on the exact runtime and renderer you ship, and profile on the slowest device.
 9. Plan to rebuild rigs from Spine, AE or Live2D rather than import them. Plan scripted physics if you need secondary motion.
+10. For a part cut from one flat image, pin its root and bend from it (mesh in Rive, shear on the web). Don't rotate a cut-out with a long root (R11).

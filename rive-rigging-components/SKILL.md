@@ -14,6 +14,7 @@ This skill holds a ranked catalogue of Rive rigging and component problems with 
 
 ## Triage procedure
 
+0. **Find what actually renders it, and look at it moving.** Before giving advice, find the code or file that draws the thing the user means, on the surface they mean (often the deployed page). It may not be a Rive file at all: CSS, SVG or canvas layers have the same rigging problems. Don't base the work on a different file that merely looks related, such as an older rig or a draft artboard. If the user says something "looks odd", watch it at the extreme pose before you diagnose it.
 1. **Classify the surface.**
    - **Editor or design problem** (it looks wrong in the Rive Editor). Usually a designer.
    - **Runtime problem** (it looks right in the editor but wrong in the app). Usually a developer.
@@ -31,7 +32,8 @@ This skill holds a ranked catalogue of Rive rigging and component problems with 
    - the version where the fix landed, if one is known;
    - a workaround in case they can't update;
    - any evidence caveat the reference attaches (unverified version, open issue, no official fix).
-5. If nothing in the index matches, say so, give general guidance from the checklists, and suggest a minimal repro plus a check of the latest release notes. Don't make up a fix.
+5. **When you change things, keep the scope tight and verify the way the user will look.** Touch only what was asked: don't edit side files, demo pages or other rigs along the way, and undo any such edits if they turn out to be wrong. Before saying it's fixed, check it in the real surface at the extreme pose, zoomed in, against the current live version (R11 *Verification*). A clean frame from your own test render isn't proof.
+6. If nothing in the index matches, say so, give general guidance from the checklists, and suggest a minimal repro plus a check of the latest release notes. Don't make up a fix.
 
 ## Symptom index
 
@@ -49,6 +51,7 @@ This skill holds a ranked catalogue of Rive rigging and component problems with 
 | Solo bounds wrong; blank page in a Solo of Components; draw-order problems | R8 Solos and draw order |
 | Gradient doesn't follow a bone-bound shape | R9 Gradients |
 | Importing a rig from Spine, After Effects/Lottie, Animate (.fla), Moho or Live2D | R10 Migration |
+| An ear, tail or other part cut from one flat image looks odd when it moves; gap, wedge or sliver at the joint; markings shear; "ear movement" | R11 Moving parts cut from one flat image |
 | "Review my rig" or "best practices" | Rigging checklist |
 
 ### Components, events, layouts → [references/components.md](references/components.md)
